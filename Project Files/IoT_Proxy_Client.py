@@ -42,5 +42,7 @@ socketTCP.connect((myIP, myPortNumber))
 userId = "Kamran's Tower"
 
 #Client Functions Testing
-REGISTER(userId) 
+#REGISTER(userId) 
+#REGISTER(userId)
+DEREGISTER(userId)
 DEREGISTER(userId)

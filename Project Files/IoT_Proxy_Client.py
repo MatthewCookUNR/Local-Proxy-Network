@@ -7,8 +7,19 @@ from socket import socket
 from uuid import getnode
 from ast import literal_eval
 
-#Client Functions
+########################### CLIENT FUNCTIONS ###############################################################
 
+#Name: REGISTER
+#
+#Purpose: Sends request to be registered
+#
+#Param: in: string representing device's Id (deviceId)
+#
+#Brief: Sends message to the server to request that device
+#       be registered in proxy network
+#
+#ErrorsHandled: N/A
+#
 def REGISTER(deviceId):
     myMAC = getnode() #gets the MAC address of device
     myMAC = hex(myMAC)
@@ -20,17 +31,65 @@ def REGISTER(deviceId):
     recvData = socketTCP.recv(1024)
     recvData = bytes.decode(recvData)
     recvData = literal_eval(recvData)
-    print("Register ACK received") #Placeholder for response based on Server
-    print(recvData[1]) 
+    if recvData[0] is 0: #Received message is a ACK
+        print("ACK: " + recvData[1])
+    elif recvData[0] is 1: #Received message is a NACK
+        print("NACK: " + recvData[1])
 
+
+#Name: DEREGISTER
+#
+#Purpose: Sends request to be deregistered
+#
+#Param: in: string representing device's Id (deviceId)
+#
+#Brief: Sends message to server so that it can handle removing
+#       device register from proxy network
+#
+#ErrorsHandled: N/A
+#      
 def DEREGISTER(deviceId):
-    myMessage = (2, deviceId)
+    myMAC = getnode() #gets the MAC address of device
+    myMAC = hex(myMAC)
+    myMAC = myMAC[2:] # removes '0x' from the hexadecimal number
+    myMAC = ':'.join(format(s, '02x') for s in bytes.fromhex(myMAC)) #seperates hexadecimal into MAC address form 
+    myMessage = (2, deviceId, myMAC)               
     myMessage = str.encode(str(myMessage))
     socketTCP.send(myMessage)
     recvData = socketTCP.recv(1024)
     recvData = bytes.decode(recvData)
     recvData = literal_eval(recvData)
-    print("Deregister ACK received") #Placeholder for response based on Server
+    if recvData[0] is 0: #Received message is a ACK
+        print("ACK: " + recvData[1])
+    elif recvData[0] is 1: #Received message is a NACK
+        print("NACK: " + recvData[1])
+
+#Name: MSG
+#
+#Purpose: Sends message to another device in the network
+#
+#Param: in: string representing device's Id (deviceId)
+#       in: string representing receiver's Id (receiverId)
+#       in: string message being sent (message)
+#
+#Brief: Sends message to the server so that it can be stored in
+#       the mailbox table of database
+#
+#ErrorsHandled: N/A/
+#
+def MSG(deviceId, receiverId, message):
+    myMessage = (3, deviceId, receiverId, message)
+    myMessage = str.encode(str(myMessage))
+    socketTCP.send(myMessage)
+    recvData = socketTCP.recv(1024)
+    recvData = bytes.decode(recvData)
+    recvData = literal_eval(recvData)
+    if recvData[0] is 0:
+        print("ACK: " + recvData[1])
+    elif recvData[0] is 1:#Received message is a NACK
+        print("NACK: " + recvData[1])
+
+####################### MAIN PROGRAM #######################################################################
     
 #Code for client to connect to server
 socketTCP = socket()
@@ -40,9 +99,9 @@ socketTCP.connect((myIP, myPortNumber))
 
 #Client Information
 userId = "Kamran's Tower"
+userId2 = "Nope"
 
 #Client Functions Testing
-#REGISTER(userId) 
-#REGISTER(userId)
-DEREGISTER(userId)
-DEREGISTER(userId)
+REGISTER(userId) 
+REGISTER(userId2)
+MSG(userId, userId2, "Hi Kamran!")

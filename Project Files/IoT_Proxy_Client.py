@@ -84,10 +84,55 @@ def MSG(deviceId, receiverId, message):
     recvData = socketTCP.recv(1024)
     recvData = bytes.decode(recvData)
     recvData = literal_eval(recvData)
-    if recvData[0] is 0:
+    if recvData[0] is 0: #Received message is a ACK
         print("ACK: " + recvData[1])
     elif recvData[0] is 1:#Received message is a NACK
         print("NACK: " + recvData[1])
+      
+#Name: QUERY
+#
+#Purpose: Query database for desired information
+#
+#Param: in: integer representing type of query
+#       in: string representing device's Id (deviceId)
+#
+#Brief: Query database for desired information requested by 
+#       the client
+#
+#ErrorsHandled: 
+#  
+def QUERY(type, deviceId):
+    if type is 0:
+        print("Mailbox Query")
+        myMessage = (4, deviceId)
+        myMessage = str.encode(str(myMessage))
+        socketTCP.send(myMessage)
+        recvData = socketTCP.recv(1024)
+        recvData = bytes.decode(recvData)
+        recvData = literal_eval(recvData)
+        if recvData[0] is 0: #Received message is a ACK
+            print("ACK: " + recvData[1])
+            printQuery(recvData[2])
+
+        elif recvData[0] is 1:#Received message is a NACK
+            print("NACK: " + recvData[1]) 
+    else:
+        print("Inputted type is not a valid query type")
+
+#Name: Print Query
+#
+#Purpose: Prints the result of a database query
+#
+#Param: in: 2-D Array representing database query (result)
+#       in: string representing device's Id (deviceId)
+#
+#Brief: N/A
+#
+#ErrorsHandled: N/A
+#  
+def printQuery(result):
+    for row in result:
+        print(row)
 
 ####################### MAIN PROGRAM #######################################################################
     
@@ -104,4 +149,5 @@ userId2 = "Nope"
 #Client Functions Testing
 REGISTER(userId) 
 REGISTER(userId2)
-MSG(userId, userId2, "Hi Kamran!")
+MSG(userId, userId2, "Testing test")
+QUERY(0, userId2)

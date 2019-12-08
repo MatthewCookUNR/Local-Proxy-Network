@@ -99,6 +99,7 @@ def DEREGISTER(deviceId, deviceMAC):
 #
 def MSG(senderId, receiverId, message):
     try:
+        print("Adding message from " + senderId + " to " + receiverId)
         dbCursor.execute('SELECT * FROM devices WHERE name = ?', (senderId, ))
         result = dbCursor.fetchall()
         if len(result) == 0:
@@ -107,7 +108,6 @@ def MSG(senderId, receiverId, message):
             
         dbCursor.execute('SELECT * FROM devices WHERE name = ?', (receiverId, ))
         result = dbCursor.fetchall()
-        
         if len(result) == 0:
             NACK((1, "Receiver Id is not registered in database"))
             return
@@ -122,6 +122,27 @@ def MSG(senderId, receiverId, message):
         print(traceback.format_exc())
         NACK((1, "Error occurred while saving message"))
         
+#Name: QUERY
+#
+#Purpose: Query database for desired information
+#
+#Param: in: string representing device's Id (deviceId)
+#
+#Brief: Query database for information requested by the client
+#       Right now queries mailbox for messages to the client
+#
+#ErrorsHandled: 
+#
+def QUERY(deviceId):
+    try:
+        print("Querying mailbox for " + deviceId)
+        dbCursor.execute('SELECT * FROM mailbox WHERE toId = ? ORDER BY id DESC', (deviceId, ))
+        result = dbCursor.fetchall()
+        ACK((0, "Here is your mail", result))
+    except:
+        print("Query unsuccessful")
+        print(traceback.format_exc())
+        NACK((1, "Error occurred while querying your mail")) 
 
 #Name: ACK
 #
@@ -153,7 +174,22 @@ def ACK(response):
 def NACK(response):
     response = str.encode(str(response))
     print("Sending NACK")
-    clientConnect.send(response)      
+    clientConnect.send(response)     
+    
+#Name: Clean Up Mail
+#
+#Purpose: Deletes mail for given device id
+#
+#Param: in: string representing device's Id (deviceId)
+#
+#Brief: Test function that removes mail from a desired
+#       device
+#
+#ErrorsHandled: N/A
+#       
+def cleanUpMail(deviceId):
+    dbCursor.execute('DELETE FROM mailbox WHERE toId = ?', (deviceId, )) 
+    sqlConnection.commit() 
     
 ####################### MAIN PROGRAM #######################################################################
     
@@ -193,7 +229,7 @@ while OPEN is True:
         elif recvData[0] is 3: #MSG received
             MSG(recvData[1], recvData[2], recvData[3])
         elif recvData[0] is 4:
-            print("4")
+            QUERY(recvData[1])
         elif recvData[0] is 5:
             print("5")
         elif recvData[0] is 6:

@@ -93,7 +93,7 @@ def MSG(deviceId, receiverId, message):
 #
 #Purpose: Query database for desired information
 #
-#Param: in: integer representing type of query
+#Param: in: integer representing type of query (qType)
 #       in: string representing device's Id (deviceId)
 #
 #Brief: Query database for desired information requested by 
@@ -101,38 +101,87 @@ def MSG(deviceId, receiverId, message):
 #
 #ErrorsHandled: 
 #  
-def QUERY(type, deviceId):
-    if type is 0:
+def QUERY(qType, deviceId):
+    if qType is 0:
         print("Mailbox Query")
-        myMessage = (4, deviceId)
+        myMessage = (4, 0, deviceId)
         myMessage = str.encode(str(myMessage))
         socketTCP.send(myMessage)
         recvData = socketTCP.recv(1024)
         recvData = bytes.decode(recvData)
         recvData = literal_eval(recvData)
+        
         if recvData[0] is 0: #Received message is a ACK
             print("ACK: " + recvData[1])
-            printQuery(recvData[2])
-
+            printMailQuery(recvData[2])
+    
+        elif recvData[0] is 1:#Received message is a NACK
+            print("NACK: " + recvData[1]) 
+    elif qType is 1:
+        print("Device Info Query")
+        myMessage = (4, 1, deviceId)
+        myMessage = str.encode(str(myMessage))
+        socketTCP.send(myMessage)
+        recvData = socketTCP.recv(1024)
+        recvData = bytes.decode(recvData)
+        recvData = literal_eval(recvData)
+        
+        if recvData[0] is 0: #Received message is a ACK
+            print("ACK: " + recvData[1])
+            printDevicesQuery(recvData[2])
+    
         elif recvData[0] is 1:#Received message is a NACK
             print("NACK: " + recvData[1]) 
     else:
         print("Inputted type is not a valid query type")
-
-#Name: Print Query
+        
+#Name: Quit Application
 #
-#Purpose: Prints the result of a database query
+#Purpose: Closes socket connection with network
+#
+#Param: N/A
+#
+#Brief: N/A
+#
+#ErrorsHandled: N/A
+#       
+def QUIT():
+    print("Quitting proxy network and closing socket connection")
+    socketTCP.close()
+
+
+#Name: Print Mail Query
+#
+#Purpose: Prints the result of a database query for mail
 #
 #Param: in: 2-D Array representing database query (result)
-#       in: string representing device's Id (deviceId)
 #
 #Brief: N/A
 #
 #ErrorsHandled: N/A
 #  
-def printQuery(result):
-    for row in result:
-        print(row)
+def printMailQuery(result):
+    if result is not None:
+        for row in result:
+            print("To: " + row[1] + "   " + "From: " + row[2] + "    Message: "
+                  + row[3] + "   " + "Date: " + row[4])
+            
+
+#Name: Print Devices Query
+#
+#Purpose: Prints the result of a database query for devices
+#
+#Param: in: 2-D Array representing database query (result)
+#
+#Brief: N/A
+#
+#ErrorsHandled: N/A
+#  
+def printDevicesQuery(result):
+    if result is not None:
+        for row in result:
+            print("DeviceId: " + row[1] + "   " + "MAC: " + row[2] + "   IP: "
+                  + row[3] + "   " + "Port: " + row[4])
 
 ####################### MAIN PROGRAM #######################################################################
     
@@ -149,5 +198,6 @@ userId2 = "Nope"
 #Client Functions Testing
 REGISTER(userId) 
 REGISTER(userId2)
-MSG(userId, userId2, "Testing test")
+#MSG(userId, userId2, "Testing test")
 QUERY(0, userId2)
+QUERY(1, userId2)

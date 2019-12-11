@@ -28,7 +28,7 @@ import traceback
 def REGISTER(deviceId, deviceMAC, IP, port):
     try:
         #First check if device is already in DB
-        dbCursor.execute('SELECT * FROM devices WHERE name = ? AND macAddress = ?', (deviceId, deviceMAC))
+        dbCursor.execute('SELECT * FROM devices WHERE name = ?', (deviceId, ))
         rows = dbCursor.fetchall()
         
         #If length of rows is 0, the given deviceId and MAC is currently not registered in DB
@@ -133,16 +133,31 @@ def MSG(senderId, receiverId, message):
 #
 #ErrorsHandled: 
 #
-def QUERY(deviceId):
-    try:
-        print("Querying mailbox for " + deviceId)
-        dbCursor.execute('SELECT * FROM mailbox WHERE toId = ? ORDER BY id DESC', (deviceId, ))
-        result = dbCursor.fetchall()
-        ACK((0, "Here is your mail", result))
-    except:
-        print("Query unsuccessful")
-        print(traceback.format_exc())
-        NACK((1, "Error occurred while querying your mail")) 
+def QUERY(qType, deviceId):
+    if qType is 0:
+        try:
+            print("Querying mailbox for " + deviceId)
+            dbCursor.execute('SELECT * FROM mailbox WHERE toId = ? ORDER BY id DESC', (deviceId, ))
+            result = dbCursor.fetchall()
+            ACK((0, "Here is your mail", result))
+        except:
+            print("Query unsuccessful")
+            print(traceback.format_exc())
+            NACK((1, "Error occurred while querying your mail")) 
+    elif qType is 1:
+        try:
+            print("Querying server for " + deviceId)
+            dbCursor.execute('SELECT * FROM devices WHERE name = ?', (deviceId, ))
+            result = dbCursor.fetchall()
+            if len(result) == 0:
+                result = None
+                ACK((0, "Device is not currently registered", result))
+            else:
+                ACK((0, "Device is registered currently", result))
+        except:
+            print("Query unsuccessful")
+            print(traceback.format_exc())
+            NACK((1, "Error occurred while querying your mail")) 
 
 #Name: ACK
 #
@@ -229,7 +244,7 @@ while OPEN is True:
         elif recvData[0] is 3: #MSG received
             MSG(recvData[1], recvData[2], recvData[3])
         elif recvData[0] is 4:
-            QUERY(recvData[1])
+            QUERY(recvData[1], recvData[2])
         elif recvData[0] is 5:
             print("5")
         elif recvData[0] is 6:

@@ -8,6 +8,39 @@ import sqlite3
 from socket import socket, AF_INET, SOCK_STREAM
 from ast import literal_eval
 import traceback
+from threading import Thread
+
+########################### CLIENT THREADING ###############################################################
+
+class clientThread(Thread):
+    def __init__(self, number, mySock, address):
+        self.mySock = mySock
+        self.address = address
+        Thread.__init__(self, name = "Thread " + str(number))
+        print(self.getName() + " has been initialized\n")
+    def run(self):
+        OPEN = True
+        while OPEN is True:
+            recvData = self.mySock.recv(1024)
+            recvData = bytes.decode(recvData)
+            if recvData:
+                recvData = literal_eval(recvData)
+                if recvData[0] is 0: 
+                    print("0")
+                elif recvData[0] is 1: #Register request
+                    REGISTER(recvData[1], recvData[2], addr[0], addr[1], self.mySock)
+                elif recvData[0] is 2: #Deregister request
+                    DEREGISTER(recvData[1], recvData[2], self.mySock)
+                elif recvData[0] is 3: #MSG received
+                    MSG(recvData[1], recvData[2], recvData[3], self.mySock)
+                elif recvData[0] is 4:
+                    QUERY(recvData[1], recvData[2], self.mySock)
+                elif recvData[0] is 5:
+                    print("5")
+                elif recvData[0] is 6:
+                    print("6")        
+                else:
+                    print("Malformed Packet Detected")
 
 ########################### SERVER FUNCTIONS ###############################################################
 
@@ -25,7 +58,7 @@ import traceback
 #
 #ErrorsHandled: N/A
 #
-def REGISTER(deviceId, deviceMAC, IP, port):
+def REGISTER(deviceId, deviceMAC, IP, port, sock):
     try:
         #First check if device is already in DB
         dbCursor.execute('SELECT * FROM devices WHERE name = ?', (deviceId, ))
@@ -38,14 +71,14 @@ def REGISTER(deviceId, deviceMAC, IP, port):
                               (deviceId, deviceMAC, IP, port))
             sqlConnection.commit()
             print(deviceId + " is registered in database")
-            ACK((0 , "Your device is registered in DB" ))
+            ACK((0 , "Your device is registered in DB" ), sock)
         else:
             print(deviceId + " is already registered in database")
-            ACK((0, "Your device is already registered in database"))
+            ACK((0, "Your device is already registered in database"), sock)
     except:
         print("Register in db unsuccessful")
         print(traceback.format_exc())
-        NACK((1, str(e)))
+        NACK((1, str(e)), sock)
 
 
 #Name: DEREGISTER
@@ -60,7 +93,7 @@ def REGISTER(deviceId, deviceMAC, IP, port):
 #
 #ErrorsHandled: N/A
 #
-def DEREGISTER(deviceId, deviceMAC):
+def DEREGISTER(deviceId, deviceMAC, sock):
     try:
         #First check if device is already in DB
         dbCursor.execute('SELECT * FROM devices WHERE name = ? AND macAddress = ?',
@@ -71,17 +104,17 @@ def DEREGISTER(deviceId, deviceMAC):
         if len(rows) == 0:
             #Insert device info into table
             print("Device is not registered in the database")
-            ACK((0, "Your device is not registered in the database"))
+            ACK((0, "Your device is not registered in the database"), sock)
         else:
             dbCursor.execute('DELETE FROM devices WHERE name = ?', (deviceId, ))
             sqlConnection.commit()
             print(deviceId + " is deregistered in database")
-            ACK((0, "Your device is now deregistered in database"))
+            ACK((0, "Your device is now deregistered in database"), sock)
         
     except:
         print("Deregister in db unsuccessful")
         print(traceback.format_exc())
-        NACK((1, str(e)))
+        NACK((1, str(e)), sock)
 
 #Name: MSG
 #
@@ -97,30 +130,30 @@ def DEREGISTER(deviceId, deviceMAC):
 #ErrorsHandled: Checks to make sure that both receiver and sender
 #               exist as registered devices
 #
-def MSG(senderId, receiverId, message):
+def MSG(senderId, receiverId, message, sock):
     try:
         print("Adding message from " + senderId + " to " + receiverId)
         dbCursor.execute('SELECT * FROM devices WHERE name = ?', (senderId, ))
         result = dbCursor.fetchall()
         if len(result) == 0:
-            NACK((1, "Your ID is not registered in database"))
+            NACK((1, "Your ID is not registered in database"), sock)
             return
             
         dbCursor.execute('SELECT * FROM devices WHERE name = ?', (receiverId, ))
         result = dbCursor.fetchall()
         if len(result) == 0:
-            NACK((1, "Receiver Id is not registered in database"))
+            NACK((1, "Receiver Id is not registered in database"), sock)
             return
         
         dbCursor.execute('INSERT INTO mailbox(toId, fromId, message, timestamp) VALUES(?, ?, ?, datetime("now"))',
                           (receiverId, senderId, message) )
         sqlConnection.commit()
-        ACK((0, "Message was saved in the database"))
+        ACK((0, "Message was saved in the database"), sock)
         
     except:
         print("Message saved unsuccessfully")
         print(traceback.format_exc())
-        NACK((1, "Error occurred while saving message"))
+        NACK((1, "Error occurred while saving message"), sock)
         
 #Name: QUERY
 #
@@ -133,17 +166,17 @@ def MSG(senderId, receiverId, message):
 #
 #ErrorsHandled: 
 #
-def QUERY(qType, deviceId):
+def QUERY(qType, deviceId, sock):
     if qType is 0:
         try:
             print("Querying mailbox for " + deviceId)
             dbCursor.execute('SELECT * FROM mailbox WHERE toId = ? ORDER BY id DESC', (deviceId, ))
             result = dbCursor.fetchall()
-            ACK((0, "Here is your mail", result))
+            ACK((0, "Here is your mail", result), sock)
         except:
             print("Query unsuccessful")
             print(traceback.format_exc())
-            NACK((1, "Error occurred while querying your mail")) 
+            NACK((1, "Error occurred while querying your mail"), sock) 
     elif qType is 1:
         try:
             print("Querying server for " + deviceId)
@@ -151,13 +184,13 @@ def QUERY(qType, deviceId):
             result = dbCursor.fetchall()
             if len(result) == 0:
                 result = None
-                ACK((0, "Device is not currently registered", result))
+                ACK((0, "Device is not currently registered", result), sock)
             else:
-                ACK((0, "Device is registered currently", result))
+                ACK((0, "Device is registered currently", result), sock)
         except:
             print("Query unsuccessful")
             print(traceback.format_exc())
-            NACK((1, "Error occurred while querying your mail")) 
+            NACK((1, "Error occurred while querying your mail"), sock) 
 
 #Name: ACK
 #
@@ -170,10 +203,10 @@ def QUERY(qType, deviceId):
 #
 #ErrorsHandled: N/A
 #
-def ACK(response):
+def ACK(response, sock):
     response = str.encode(str(response))
     print("Sending ACK")
-    clientConnect.send(response)        
+    sock.send(response)        
 
 #Name: NACK
 #
@@ -186,10 +219,10 @@ def ACK(response):
 #
 #ErrorsHandled: N/A
 #
-def NACK(response):
+def NACK(response, sock):
     response = str.encode(str(response))
     print("Sending NACK")
-    clientConnect.send(response)     
+    sock.send(response)     
     
 #Name: Clean Up Mail
 #
@@ -210,44 +243,27 @@ def cleanUpMail(deviceId):
     
 #Connecting to SQLite Database
 print("Setting up SQLite db")
-sqlConnection = sqlite3.connect('Proxy_Data.db')
+sqlConnection = sqlite3.connect('Proxy_Data.db', check_same_thread=False)
 dbCursor = sqlConnection.cursor()
 dbCursor.execute('CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY, name TEXT, macAddress TEXT, IP TEXT, portNum TEXT)')
 dbCursor.execute('CREATE TABLE IF NOT EXISTS mailbox (id INTEGER PRIMARY KEY, toId TEXT, fromId TEXT, message TEXT, timestamp TEXT)')
 print("Db connected")
-
+    
 #Socket Setup Code
 TCPsocket = socket(AF_INET, SOCK_STREAM)
-print ("Socket Created")
-myIP = "192.168.56.1"
+myIP = "192.168.5.34"
 myPortNumber = 9999
 TCPsocket.bind((myIP, myPortNumber))
 TCPsocket.listen(5)
-print("Waiting for connection" + "\n")
-clientConnect, addr = TCPsocket.accept()
-print ('Got a connection from', str(addr))
+print ("Socket Created")
+
 
 #Server will always be open while program is ran to receive requests from
 #a potential client
-OPEN = True
-while OPEN is True:
-    recvData = clientConnect.recv(1024)
-    recvData = bytes.decode(recvData)
-    if recvData:
-        recvData = literal_eval(recvData)
-        if recvData[0] is 0: 
-            print("0")
-        elif recvData[0] is 1: #Register request
-            REGISTER(recvData[1], recvData[2], addr[0], addr[1])
-        elif recvData[0] is 2: #Deregister request
-            DEREGISTER(recvData[1], recvData[2])
-        elif recvData[0] is 3: #MSG received
-            MSG(recvData[1], recvData[2], recvData[3])
-        elif recvData[0] is 4:
-            QUERY(recvData[1], recvData[2])
-        elif recvData[0] is 5:
-            print("5")
-        elif recvData[0] is 6:
-            print("6")        
-        else:
-            print("Malformed Packet Detected")
+ServerOn = True
+while ServerOn is True:
+    print("Waiting for connection" + "\n")
+    clientConnect, addr = TCPsocket.accept()
+    newThread = clientThread(1, clientConnect, addr )
+    newThread.start()
+

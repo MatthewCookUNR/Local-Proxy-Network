@@ -187,7 +187,7 @@ def printDevicesQuery(result):
     
 #Code for client to connect to server
 socketTCP = socket()
-myIP = "192.168.56.1"
+myIP = "192.168.5.34"
 myPortNumber = 9999
 socketTCP.connect((myIP, myPortNumber))
 
@@ -198,6 +198,6 @@ userId2 = "Nope"
 #Client Functions Testing
 REGISTER(userId) 
 REGISTER(userId2)
-#MSG(userId, userId2, "Testing test")
+MSG(userId, userId2, "Testing test")
 QUERY(0, userId2)
 QUERY(1, userId2)

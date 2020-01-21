@@ -8,6 +8,7 @@ import sqlite3
 from socket import socket, AF_INET, SOCK_STREAM
 from ast import literal_eval
 import traceback
+import threading
 from threading import Thread
 
 ########################### CLIENT THREADING ###############################################################
@@ -41,6 +42,11 @@ class clientThread(Thread):
                     print("6")        
                 else:
                     print("Malformed Packet Detected")
+                    
+class sharedDataLocks:
+    def __init__(self):
+        self.devicesLock = threading.RLock()
+        self.mailLock = threading.RLock()
 
 ########################### SERVER FUNCTIONS ###############################################################
 
@@ -61,21 +67,27 @@ class clientThread(Thread):
 def REGISTER(deviceId, deviceMAC, IP, port, sock):
     try:
         #First check if device is already in DB
+        myLocks.devicesLock.acquire(True)
         dbCursor.execute('SELECT * FROM devices WHERE name = ?', (deviceId, ))
         rows = dbCursor.fetchall()
         
         #If length of rows is 0, the given deviceId and MAC is currently not registered in DB
         if len(rows) == 0:
+            
             #Insert device info into table
             dbCursor.execute('INSERT INTO devices(name, macAddress, IP, portNum) VALUES(?, ?, ?, ?)',
                               (deviceId, deviceMAC, IP, port))
             sqlConnection.commit()
+            myLocks.devicesLock.release()
             print(deviceId + " is registered in database")
             ACK((0 , "Your device is registered in DB" ), sock)
         else:
+            myLocks.devicesLock.release()
             print(deviceId + " is already registered in database")
             ACK((0, "Your device is already registered in database"), sock)
-    except:
+    except Exception as e:
+        if(myLocks.devicesLock._is_owned()):
+            myLocks.devicesLock.release()
         print("Register in db unsuccessful")
         print(traceback.format_exc())
         NACK((1, str(e)), sock)
@@ -96,6 +108,7 @@ def REGISTER(deviceId, deviceMAC, IP, port, sock):
 def DEREGISTER(deviceId, deviceMAC, sock):
     try:
         #First check if device is already in DB
+        myLocks.devicesLock.acquire(True)
         dbCursor.execute('SELECT * FROM devices WHERE name = ? AND macAddress = ?',
                           (deviceId, deviceMAC ))
         rows = dbCursor.fetchall()
@@ -103,15 +116,19 @@ def DEREGISTER(deviceId, deviceMAC, sock):
         #If length of rows is 0, the given deviceId is currently not registered in DB
         if len(rows) == 0:
             #Insert device info into table
+            myLocks.devicesLock.release()
             print("Device is not registered in the database")
             ACK((0, "Your device is not registered in the database"), sock)
         else:
             dbCursor.execute('DELETE FROM devices WHERE name = ?', (deviceId, ))
             sqlConnection.commit()
+            myLocks.devicesLock.release()
             print(deviceId + " is deregistered in database")
             ACK((0, "Your device is now deregistered in database"), sock)
         
-    except:
+    except Exception as e:
+        if(myLocks.devicesLock._is_owned()):
+            myLocks.devicesLock.release()
         print("Deregister in db unsuccessful")
         print(traceback.format_exc())
         NACK((1, str(e)), sock)
@@ -133,24 +150,30 @@ def DEREGISTER(deviceId, deviceMAC, sock):
 def MSG(senderId, receiverId, message, sock):
     try:
         print("Adding message from " + senderId + " to " + receiverId)
+        myLocks.mailLock.acquire(True)
         dbCursor.execute('SELECT * FROM devices WHERE name = ?', (senderId, ))
         result = dbCursor.fetchall()
         if len(result) == 0:
+            myLocks.mailLock.release()
             NACK((1, "Your ID is not registered in database"), sock)
             return
             
         dbCursor.execute('SELECT * FROM devices WHERE name = ?', (receiverId, ))
         result = dbCursor.fetchall()
         if len(result) == 0:
+            myLocks.mailLock.release()
             NACK((1, "Receiver Id is not registered in database"), sock)
             return
         
         dbCursor.execute('INSERT INTO mailbox(toId, fromId, message, timestamp) VALUES(?, ?, ?, datetime("now"))',
                           (receiverId, senderId, message) )
         sqlConnection.commit()
+        myLocks.mailLock.release()
         ACK((0, "Message was saved in the database"), sock)
         
     except:
+        if(myLocks.mailLock._is_owned()):
+            myLocks.mailLock.release()
         print("Message saved unsuccessfully")
         print(traceback.format_exc())
         NACK((1, "Error occurred while saving message"), sock)
@@ -170,24 +193,32 @@ def QUERY(qType, deviceId, sock):
     if qType is 0:
         try:
             print("Querying mailbox for " + deviceId)
+            myLocks.mailLock.acquire(True)
             dbCursor.execute('SELECT * FROM mailbox WHERE toId = ? ORDER BY id DESC', (deviceId, ))
             result = dbCursor.fetchall()
+            myLocks.mailLock.release()
             ACK((0, "Here is your mail", result), sock)
         except:
+            if(myLocks.mailLock._is_owned()):
+                myLocks.mailLock.release()
             print("Query unsuccessful")
             print(traceback.format_exc())
             NACK((1, "Error occurred while querying your mail"), sock) 
     elif qType is 1:
         try:
             print("Querying server for " + deviceId)
+            myLocks.devicesLock.acquire(True)
             dbCursor.execute('SELECT * FROM devices WHERE name = ?', (deviceId, ))
             result = dbCursor.fetchall()
+            myLocks.devicesLock.release()
             if len(result) == 0:
                 result = None
                 ACK((0, "Device is not currently registered", result), sock)
             else:
                 ACK((0, "Device is registered currently", result), sock)
         except:
+            if(myLocks.devicesLock._is_owned()):
+                myLocks.devicesLock.release()
             print("Query unsuccessful")
             print(traceback.format_exc())
             NACK((1, "Error occurred while querying your mail"), sock) 
@@ -248,6 +279,11 @@ dbCursor = sqlConnection.cursor()
 dbCursor.execute('CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY, name TEXT, macAddress TEXT, IP TEXT, portNum TEXT)')
 dbCursor.execute('CREATE TABLE IF NOT EXISTS mailbox (id INTEGER PRIMARY KEY, toId TEXT, fromId TEXT, message TEXT, timestamp TEXT)')
 print("Db connected")
+
+#Create Class object containing necessary data locks
+myLocks = sharedDataLocks()
+threadList = []
+threadNum = -1
     
 #Socket Setup Code
 TCPsocket = socket(AF_INET, SOCK_STREAM)
@@ -264,6 +300,7 @@ ServerOn = True
 while ServerOn is True:
     print("Waiting for connection" + "\n")
     clientConnect, addr = TCPsocket.accept()
-    newThread = clientThread(1, clientConnect, addr )
-    newThread.start()
+    threadNum = threadNum + 1
+    threadList.append(clientThread(threadNum, clientConnect, addr ))
+    threadList[threadNum].start()
 

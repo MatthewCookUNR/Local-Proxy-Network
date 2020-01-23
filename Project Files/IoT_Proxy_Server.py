@@ -34,7 +34,7 @@ class clientThread(Thread):
                     DEREGISTER(recvData[1], recvData[2], self.mySock)
                 elif recvData[0] is 3: #MSG received
                     MSG(recvData[1], recvData[2], recvData[3], self.mySock)
-                elif recvData[0] is 4:
+                elif recvData[0] is 4: #Query request
                     QUERY(recvData[1], recvData[2], self.mySock)
                 elif recvData[0] is 5:
                     print("5")
@@ -287,7 +287,7 @@ threadNum = -1
     
 #Socket Setup Code
 TCPsocket = socket(AF_INET, SOCK_STREAM)
-myIP = "192.168.5.34"
+myIP = "192.168.5.5"
 myPortNumber = 9999
 TCPsocket.bind((myIP, myPortNumber))
 TCPsocket.listen(5)

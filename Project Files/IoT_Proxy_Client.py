@@ -33,7 +33,7 @@ class Ui_LocalProxyNetwork(object):
         self.btnDeregister = QtWidgets.QPushButton(self.centralwidget)
         self.btnDeregister.setGeometry(QtCore.QRect(120, 280, 161, 71))
         self.btnDeregister.setObjectName("btnDeregister")
-        self.btnDeregister.clicked.connect(lambda: DEREGISTER("Kamran's Tower"))
+        self.btnDeregister.clicked.connect(self.deregisterWindow)
         
         self.btnQuery = QtWidgets.QPushButton(self.centralwidget)
         self.btnQuery.setGeometry(QtCore.QRect(560, 280, 161, 71))
@@ -43,7 +43,7 @@ class Ui_LocalProxyNetwork(object):
         self.btnMessage = QtWidgets.QPushButton(self.centralwidget)
         self.btnMessage.setGeometry(QtCore.QRect(560, 60, 161, 71))
         self.btnMessage.setObjectName("btnMessage")
-        self.btnMessage.clicked.connect(lambda: MSG("Kamran's Tower", "Nope", "Testing test"))
+        self.btnMessage.clicked.connect(self.messageWindow)
         
         self.btnQuit = QtWidgets.QPushButton(self.centralwidget)
         self.btnQuit.setGeometry(QtCore.QRect(330, 180, 161, 71))
@@ -73,6 +73,7 @@ class Ui_LocalProxyNetwork(object):
         self.textBrowser = QtWidgets.QTextBrowser(self.scrollAreaWidgetContents)
         self.textBrowser.setGeometry(QtCore.QRect(10, 30, 721, 211))
         self.textBrowser.setObjectName("textBrowser")
+        self.textBrowser.setFont(font)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         LocalProxyNetwork.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(LocalProxyNetwork)
@@ -110,7 +111,18 @@ class Ui_LocalProxyNetwork(object):
         ui = Ui_RegisterWindow()
         ui.setupUi(self.registerWindow)
         self.registerWindow.show()
+    
+    def deregisterWindow(self):
+        self.deregisterWindow = QtWidgets.QMainWindow()
+        ui = Ui_DeregisterWindow()
+        ui.setupUi(self.deregisterWindow)
+        self.deregisterWindow.show()   
         
+    def messageWindow(self):
+        self.messageWindow = QtWidgets.QMainWindow()
+        ui = Ui_MessageWindow()
+        ui.setupUi(self.messageWindow)
+        self.messageWindow.show()
         
 ##################### REGISTER WINDOW ############################
 
@@ -160,7 +172,146 @@ class Ui_RegisterWindow(object):
     def registerDevice(self):
         deviceId = self.editRegister.toPlainText()
         REGISTER(deviceId)
-    
+
+##################### DEREGISTER WINDOW ############################
+
+class Ui_DeregisterWindow(object):
+    def setupUi(self, DeregisterWindow):
+        DeregisterWindow.setObjectName("DeregisterWindow")
+        DeregisterWindow.resize(491, 261)
+        self.centralwidget = QtWidgets.QWidget(DeregisterWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        
+        self.lblDeregister = QtWidgets.QLabel(self.centralwidget)
+        self.lblDeregister.setGeometry(QtCore.QRect(10, 50, 301, 41))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lblDeregister.setFont(font)
+        self.lblDeregister.setObjectName("lblDeregister")
+        
+        self.editDeregister = QtWidgets.QTextEdit(self.centralwidget)
+        self.editDeregister.setGeometry(QtCore.QRect(320, 40, 151, 71))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.editDeregister.setFont(font)
+        self.editDeregister.setObjectName("editDeregister")
+        
+        self.btnDeregister = QtWidgets.QPushButton(self.centralwidget)
+        self.btnDeregister.setGeometry(QtCore.QRect(170, 140, 111, 61))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.btnDeregister.setFont(font)
+        self.btnDeregister.setObjectName("btnDeregister")
+        self.btnDeregister.clicked.connect(lambda: self.deregisterDevice())
+        
+        DeregisterWindow.setCentralWidget(self.centralwidget)
+        self.statusbar = QtWidgets.QStatusBar(DeregisterWindow)
+        self.statusbar.setObjectName("statusbar")
+        DeregisterWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(DeregisterWindow)
+        QtCore.QMetaObject.connectSlotsByName(DeregisterWindow)
+
+    def retranslateUi(self, DeregisterWindow):
+        _translate = QtCore.QCoreApplication.translate
+        DeregisterWindow.setWindowTitle(_translate("DeregisterWindow", "MainWindow"))
+        self.lblDeregister.setText(_translate("DeregisterWindow", "Please enter the nickname for your device:"))
+        self.btnDeregister.setText(_translate("DeregisterWindow", "Deregister"))
+        
+    def deregisterDevice(self):
+        deviceId = self.editDeregister.toPlainText()
+        DEREGISTER(deviceId)
+        
+##################### MESSAGE WINDOW ############################
+
+class Ui_MessageWindow(object):
+    def setupUi(self, MessageWindow):
+        MessageWindow.setObjectName("MessageWindow")
+        MessageWindow.resize(487, 380)
+        self.centralwidget = QtWidgets.QWidget(MessageWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        
+        self.lblTitle = QtWidgets.QLabel(self.centralwidget)
+        self.lblTitle.setGeometry(QtCore.QRect(170, 10, 131, 31))
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lblTitle.setFont(font)
+        self.lblTitle.setObjectName("lblTitle")
+        
+        self.lblTo = QtWidgets.QLabel(self.centralwidget)
+        self.lblTo.setGeometry(QtCore.QRect(110, 50, 31, 16))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lblTo.setFont(font)
+        self.lblTo.setObjectName("lblTo")
+        
+        self.lblFrom = QtWidgets.QLabel(self.centralwidget)
+        self.lblFrom.setGeometry(QtCore.QRect(90, 110, 47, 14))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lblFrom.setFont(font)
+        self.lblFrom.setObjectName("lblFrom")
+        
+        self.editTo = QtWidgets.QTextEdit(self.centralwidget)
+        self.editTo.setGeometry(QtCore.QRect(140, 50, 161, 31))
+        self.editTo.setObjectName("editTo")
+        self.editTo.setFont(font)
+        
+        self.editMessage = QtWidgets.QTextEdit(self.centralwidget)
+        self.editMessage.setGeometry(QtCore.QRect(140, 150, 251, 111))
+        self.editMessage.setObjectName("editMessage")
+        self.editMessage.setFont(font)
+        
+        self.editFrom = QtWidgets.QTextEdit(self.centralwidget)
+        self.editFrom.setGeometry(QtCore.QRect(140, 100, 161, 31))
+        self.editFrom.setObjectName("editFrom")
+        self.editFrom.setFont(font)
+        
+        self.lblMessage = QtWidgets.QLabel(self.centralwidget)
+        self.lblMessage.setGeometry(QtCore.QRect(70, 150, 71, 21))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lblMessage.setFont(font)
+        self.lblMessage.setObjectName("lblMessage")
+        
+        self.btnDeregister = QtWidgets.QPushButton(self.centralwidget)
+        self.btnDeregister.setGeometry(QtCore.QRect(200, 280, 111, 61))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.btnDeregister.setFont(font)
+        self.btnDeregister.setObjectName("btnDeregister")
+        self.btnDeregister.clicked.connect(lambda: self.messageDevice())
+        
+        MessageWindow.setCentralWidget(self.centralwidget)
+        self.statusbar = QtWidgets.QStatusBar(MessageWindow)
+        self.statusbar.setObjectName("statusbar")
+        MessageWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(MessageWindow)
+        QtCore.QMetaObject.connectSlotsByName(MessageWindow)
+
+    def retranslateUi(self, MessageWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MessageWindow.setWindowTitle(_translate("MessageWindow", "MainWindow"))
+        self.lblTitle.setText(_translate("MessageWindow", "New Message"))
+        self.lblTo.setText(_translate("MessageWindow", "To:"))
+        self.lblFrom.setText(_translate("MessageWindow", "From:"))
+        self.editMessage.setHtml(_translate("MessageWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:7.875pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
+        self.lblMessage.setText(_translate("MessageWindow", "Message:"))
+        self.btnDeregister.setText(_translate("MessageWindow", "Send"))
+        
+    def messageDevice(self):
+        toId = self.editTo.toPlainText()
+        fromId = self.editFrom.toPlainText()
+        message = self.editMessage.toPlainText()
+        MSG(fromId, toId, message)
+        
 ########################### CLIENT FUNCTIONS ###############################################################
 
 #Name: REGISTER
@@ -235,8 +386,8 @@ def DEREGISTER(deviceId):
 #
 #ErrorsHandled: N/A/
 #
-def MSG(deviceId, receiverId, message):
-    myMessage = (3, deviceId, receiverId, message)
+def MSG(fromId, toID, message):
+    myMessage = (3, fromId, toID, message)
     myMessage = str.encode(str(myMessage))
     socketTCP.send(myMessage)
     recvData = socketTCP.recv(1024)

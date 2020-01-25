@@ -9,6 +9,7 @@ from socket import socket
 from uuid import getnode
 from ast import literal_eval
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 
 ########################### PyQt5 UI ###############################################################
 
@@ -16,7 +17,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 #
 # Created by: PyQt5 UI code generator 5.13.0
 
-
+##################### MAIN WINDOW ############################
 class Ui_LocalProxyNetwork(object):
     def setupUi(self, LocalProxyNetwork):
         LocalProxyNetwork.setObjectName("LocalProxyNetwork")
@@ -27,7 +28,7 @@ class Ui_LocalProxyNetwork(object):
         self.btnRegister = QtWidgets.QPushButton(self.centralwidget)
         self.btnRegister.setGeometry(QtCore.QRect(120, 60, 161, 71))
         self.btnRegister.setObjectName("btnRegister")
-        self.btnRegister.clicked.connect(lambda: REGISTER("Kamran's Tower"))
+        self.btnRegister.clicked.connect(self.registerWindow)
         
         self.btnDeregister = QtWidgets.QPushButton(self.centralwidget)
         self.btnDeregister.setGeometry(QtCore.QRect(120, 280, 161, 71))
@@ -97,7 +98,69 @@ class Ui_LocalProxyNetwork(object):
 "</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:7.875pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Welcome to Local Proxy Network UI version 1.0</p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Output is below:</p></body></html>"))
+    
+    def showPop(self):
+        msg = QMessageBox()
+        msg.setWindowTitle("Register Stuff")
+        msg.setText("Do some register stuff")
+        ex = msg.exec_()
+    
+    def registerWindow(self):
+        self.registerWindow = QtWidgets.QMainWindow()
+        ui = Ui_RegisterWindow()
+        ui.setupUi(self.registerWindow)
+        self.registerWindow.show()
+        
+        
+##################### REGISTER WINDOW ############################
 
+class Ui_RegisterWindow(object):
+    def setupUi(self, RegisterWindow):
+        RegisterWindow.setObjectName("RegisterWindow")
+        RegisterWindow.resize(491, 262)
+        self.centralwidget = QtWidgets.QWidget(RegisterWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        
+        self.lblRegister = QtWidgets.QLabel(self.centralwidget)
+        self.lblRegister.setGeometry(QtCore.QRect(10, 50, 291, 61))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lblRegister.setFont(font)
+        self.lblRegister.setObjectName("lblRegister")
+        
+        self.editRegister = QtWidgets.QTextEdit(self.centralwidget)
+        self.editRegister.setGeometry(QtCore.QRect(310, 40, 151, 71))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.editRegister.setFont(font)
+        self.editRegister.setObjectName("editRegister")
+        
+        self.btnRegister = QtWidgets.QPushButton(self.centralwidget)
+        self.btnRegister.setGeometry(QtCore.QRect(170, 140, 111, 61))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.btnRegister.setFont(font)
+        self.btnRegister.setObjectName("btnRegister")
+        self.btnRegister.clicked.connect(lambda: self.registerDevice())
+        
+        RegisterWindow.setCentralWidget(self.centralwidget)
+        self.statusbar = QtWidgets.QStatusBar(RegisterWindow)
+        self.statusbar.setObjectName("statusbar")
+        RegisterWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(RegisterWindow)
+        QtCore.QMetaObject.connectSlotsByName(RegisterWindow)
+
+    def retranslateUi(self, RegisterWindow):
+        _translate = QtCore.QCoreApplication.translate
+        RegisterWindow.setWindowTitle(_translate("RegisterWindow", "MainWindow"))
+        self.lblRegister.setText(_translate("RegisterWindow", "Please Enter a nickname for your device:"))
+        self.btnRegister.setText(_translate("RegisterWindow", "Register"))
+        
+    def registerDevice(self):
+        deviceId = self.editRegister.toPlainText()
+        REGISTER(deviceId)
+    
 ########################### CLIENT FUNCTIONS ###############################################################
 
 #Name: REGISTER
@@ -310,12 +373,12 @@ ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "\n\n")
 sys.exit(app.exec_())
 
 #Client Information
-userId = "Kamran's Tower"
-userId2 = "Nope"
+#userId = "Kamran's Tower"
+#userId2 = "Nope"
 
 #Client Functions Testing
-REGISTER(userId) 
-REGISTER(userId2)
-MSG(userId, userId2, "Testing test")
-QUERY(0, userId2)
-QUERY(1, userId2)
+#REGISTER(userId) 
+#REGISTER(userId2)
+#MSG(userId, userId2, "Testing test")
+#QUERY(0, userId2)
+#QUERY(1, userId2)

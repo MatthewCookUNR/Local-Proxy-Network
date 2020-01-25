@@ -436,11 +436,11 @@ def REGISTER(deviceId):
     recvData = bytes.decode(recvData)
     recvData = literal_eval(recvData)
     if recvData[0] is 0: #Received message is a ACK
-        print("ACK: " + recvData[1])
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
+        print("ACK: " + recvData[1] + '\n')
+        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n" + '\n')
     elif recvData[0] is 1: #Received message is a NACK
-        print("NACK: " + recvData[1])
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "NACK: " + recvData[1] + "\n")
+        print("NACK: " + recvData[1] + '\n')
+        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "NACK: " + recvData[1] + "\n" + '\n')
 
 
 #Name: DEREGISTER
@@ -466,11 +466,11 @@ def DEREGISTER(deviceId):
     recvData = bytes.decode(recvData)
     recvData = literal_eval(recvData)
     if recvData[0] is 0: #Received message is a ACK
-        print("ACK: " + recvData[1])
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
+        print("ACK: " + recvData[1] + '\n')
+        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n" + '\n')
     elif recvData[0] is 1: #Received message is a NACK
-        print("NACK: " + recvData[1])
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "NACK: " + recvData[1] + "\n")
+        print("NACK: " + recvData[1] + '\n')
+        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "NACK: " + recvData[1] + "\n" + '\n')
 
 #Name: MSG
 #
@@ -493,11 +493,11 @@ def MSG(fromId, toID, message):
     recvData = bytes.decode(recvData)
     recvData = literal_eval(recvData)
     if recvData[0] is 0: #Received message is a ACK
-        print("ACK: " + recvData[1])
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
+        print("ACK: " + recvData[1] + '\n')
+        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n" + '\n')
     elif recvData[0] is 1:#Received message is a NACK
-        print("NACK: " + recvData[1])
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "NACK: " + recvData[1] + "\n")
+        print("NACK: " + recvData[1] + '\n')
+        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "NACK: " + recvData[1] + "\n" + '\n')
       
 #Name: QUERY
 #
@@ -512,48 +512,47 @@ def MSG(fromId, toID, message):
 #ErrorsHandled: 
 #  
 def QUERY(qType, deviceId):
-    if qType is 0:
-        print("Mailbox Query")
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "Mailbox Query" + "\n")
-        myMessage = (4, 0, deviceId)
-        myMessage = str.encode(str(myMessage))
-        try:
+    try:
+        if qType is 0:
+            print("Mailbox Query")
+            ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "Mailbox Query" + "\n")
+            myMessage = (4, 0, deviceId)
+            myMessage = str.encode(str(myMessage))
             socketTCP.send(myMessage)
             recvData = socketTCP.recv(2048)
             recvData = bytes.decode(recvData)
             recvData = literal_eval(recvData)
-        except Exception as e:
-            print(traceback.format_exc())
-
-        if recvData[0] is 0: #Received message is a ACK
-            print("ACK: " + recvData[1])
-            ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
-            printMailQuery(recvData[2])
-    
-        elif recvData[0] is 1:#Received message is a NACK
-            print("NACK: " + recvData[1]) 
-            ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "NACK: " + recvData[1] + "\n")
-    elif qType is 1:
-        print("Device Info Query")
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "Device Info Query" + "\n")
-        myMessage = (4, 1, deviceId)
-        myMessage = str.encode(str(myMessage))
-        socketTCP.send(myMessage)
-        recvData = socketTCP.recv(1024)
-        recvData = bytes.decode(recvData)
-        recvData = literal_eval(recvData)
+            if recvData[0] is 0: #Received message is a ACK
+                print("ACK: " + recvData[1])
+                ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
+                printMailQuery(recvData[2])
         
-        if recvData[0] is 0: #Received message is a ACK
-            print("ACK: " + recvData[1])
-            ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
-            printDevicesQuery(recvData[2])
-    
-        elif recvData[0] is 1:#Received message is a NACK
-            print("NACK: " + recvData[1]) 
-            ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
-    else:
-        print("Inputted type is not a valid query type")
-        ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "Inputted type is not a valid query type" + "\n")
+            elif recvData[0] is 1:#Received message is a NACK
+                print("NACK: " + recvData[1]) 
+                ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "NACK: " + recvData[1] + "\n")
+        elif qType is 1:
+            print("Device Info Query")
+            ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "Device Info Query" + "\n")
+            myMessage = (4, 1, deviceId)
+            myMessage = str.encode(str(myMessage))
+            socketTCP.send(myMessage)
+            recvData = socketTCP.recv(1024)
+            recvData = bytes.decode(recvData)
+            recvData = literal_eval(recvData)
+            
+            if recvData[0] is 0: #Received message is a ACK
+                print("ACK: " + recvData[1])
+                ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
+                printDevicesQuery(recvData[2])
+        
+            elif recvData[0] is 1:#Received message is a NACK
+                print("NACK: " + recvData[1]) 
+                ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
+        else:
+            print("Inputted type is not a valid query type")
+            ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "Inputted type is not a valid query type" + "\n")
+    except Exception as e:
+            print(traceback.format_exc())
         
 #Name: Quit Application
 #
@@ -569,6 +568,7 @@ def QUIT():
     print("Quitting proxy network and closing socket connection")
     ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "Quitting proxy network and closing socket connection" + "\n")
     socketTCP.close()
+    sys.exit(app.exec_())
 
 
 #Name: Print Mail Query
@@ -587,7 +587,8 @@ def printMailQuery(result):
             myRow = "To: " + row[1] + "   " + "From: " + row[2] + "    Message: " + row[3] + "   " + "Date: " + row[4]
             print(myRow)
             ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + myRow + "\n")
-            
+    print("\n")
+    ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "\n")         
             
             
 
@@ -607,6 +608,8 @@ def printDevicesQuery(result):
             myRow = "DeviceId: " + row[1] + "   " + "MAC: " + row[2] + "   IP: " + row[3] + "   " + "Port: " + row[4]
             print(myRow)
             ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + myRow + "\n")
+    print("\n")
+    ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "\n")    
 
 ####################### MAIN PROGRAM #######################################################################
 

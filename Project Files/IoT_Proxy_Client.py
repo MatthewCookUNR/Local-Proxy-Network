@@ -8,6 +8,7 @@ import sys
 from socket import socket
 from uuid import getnode
 from ast import literal_eval
+import traceback
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
@@ -38,7 +39,7 @@ class Ui_LocalProxyNetwork(object):
         self.btnQuery = QtWidgets.QPushButton(self.centralwidget)
         self.btnQuery.setGeometry(QtCore.QRect(560, 280, 161, 71))
         self.btnQuery.setObjectName("btnQuery")
-        self.btnQuery.clicked.connect(lambda: QUERY(0, "Nope"))
+        self.btnQuery.clicked.connect(self.queryWindow)
         
         self.btnMessage = QtWidgets.QPushButton(self.centralwidget)
         self.btnMessage.setGeometry(QtCore.QRect(560, 60, 161, 71))
@@ -51,9 +52,10 @@ class Ui_LocalProxyNetwork(object):
         self.btnQuit.clicked.connect(QUIT)
         
         self.lbCommand = QtWidgets.QLabel(self.centralwidget)
-        self.lbCommand.setGeometry(QtCore.QRect(350, 0, 131, 61))
+        self.lbCommand.setGeometry(QtCore.QRect(350, 0, 160, 61))
         font = QtGui.QFont()
         font.setPointSize(18)
+        font.setBold(True)
         self.lbCommand.setFont(font)
         self.lbCommand.setObjectName("lbCommand")
         
@@ -123,6 +125,12 @@ class Ui_LocalProxyNetwork(object):
         ui = Ui_MessageWindow()
         ui.setupUi(self.messageWindow)
         self.messageWindow.show()
+
+    def queryWindow(self):
+        self.queryWindow = QtWidgets.QMainWindow()
+        ui = Ui_QueryWindow()
+        ui.setupUi(self.queryWindow)
+        self.queryWindow.show()
         
 ##################### REGISTER WINDOW ############################
 
@@ -312,6 +320,97 @@ class Ui_MessageWindow(object):
         message = self.editMessage.toPlainText()
         MSG(fromId, toId, message)
         
+##################### QUERY WINDOW ############################
+
+
+class Ui_QueryWindow(object):
+    def setupUi(self, QueryWindow):
+        QueryWindow.setObjectName("QueryWindow")
+        QueryWindow.resize(474, 332)
+        self.centralwidget = QtWidgets.QWidget(QueryWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        
+        self.lblTitle = QtWidgets.QLabel(self.centralwidget)
+        self.lblTitle.setGeometry(QtCore.QRect(190, 10, 111, 31))
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lblTitle.setFont(font)
+        self.lblTitle.setObjectName("lblTitle")
+        
+        self.lblDeviceId = QtWidgets.QLabel(self.centralwidget)
+        self.lblDeviceId.setGeometry(QtCore.QRect(70, 50, 111, 21))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lblDeviceId.setFont(font)
+        self.lblDeviceId.setObjectName("lblDeviceId")
+        
+        self.lblMessage = QtWidgets.QLabel(self.centralwidget)
+        self.lblMessage.setGeometry(QtCore.QRect(130, 100, 51, 21))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lblMessage.setFont(font)
+        self.lblMessage.setObjectName("lblMessage")
+        
+        self.btnQuery = QtWidgets.QPushButton(self.centralwidget)
+        self.btnQuery.setGeometry(QtCore.QRect(180, 230, 111, 61))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.btnQuery.setFont(font)
+        self.btnQuery.setObjectName("btnQuery")
+        self.btnQuery.clicked.connect(lambda: self.queryDevice())
+        
+        self.editDeviceId = QtWidgets.QTextEdit(self.centralwidget)
+        self.editDeviceId.setGeometry(QtCore.QRect(180, 50, 161, 31))
+        self.editDeviceId.setObjectName("editDeviceId")
+        self.editDeviceId.setFont(font)
+        
+        self.lblType = QtWidgets.QLabel(self.centralwidget)
+        self.lblType.setGeometry(QtCore.QRect(190, 100, 201, 21))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.lblType.setFont(font)
+        self.lblType.setObjectName("lblType")
+        
+        self.sliderType = QtWidgets.QSlider(self.centralwidget)
+        self.sliderType.setGeometry(QtCore.QRect(120, 160, 241, 21))
+        self.sliderType.setMaximum(1)
+        self.sliderType.setOrientation(QtCore.Qt.Horizontal)
+        self.sliderType.setObjectName("sliderType")
+        self.sliderType.valueChanged.connect(lambda: self.adjustTypeLabel())
+        
+        QueryWindow.setCentralWidget(self.centralwidget)
+        self.statusbar = QtWidgets.QStatusBar(QueryWindow)
+        self.statusbar.setObjectName("statusbar")
+        QueryWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(QueryWindow)
+        QtCore.QMetaObject.connectSlotsByName(QueryWindow)
+
+    def retranslateUi(self, QueryWindow):
+        _translate = QtCore.QCoreApplication.translate
+        QueryWindow.setWindowTitle(_translate("QueryWindow", "MainWindow"))
+        self.lblTitle.setText(_translate("QueryWindow", "Data Query"))
+        self.lblDeviceId.setText(_translate("QueryWindow", "Target Device:"))
+        self.lblMessage.setText(_translate("QueryWindow", "Type:"))
+        self.btnQuery.setText(_translate("QueryWindow", "Send"))
+        self.lblType.setText(_translate("QueryWindow", "Mailbox"))
+        
+    def adjustTypeLabel(self):
+        numType = self.sliderType.value()
+        if(numType is 0):
+            self.lblType.setText("Mailbox")
+        elif(numType is 1):
+            self.lblType.setText("Device Information")
+            
+    def queryDevice(self):
+        numType = self.sliderType.value()
+        targetDevice = self.editDeviceId.toPlainText()
+        QUERY(numType, targetDevice)
+        
 ########################### CLIENT FUNCTIONS ###############################################################
 
 #Name: REGISTER
@@ -418,11 +517,14 @@ def QUERY(qType, deviceId):
         ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "Mailbox Query" + "\n")
         myMessage = (4, 0, deviceId)
         myMessage = str.encode(str(myMessage))
-        socketTCP.send(myMessage)
-        recvData = socketTCP.recv(1024)
-        recvData = bytes.decode(recvData)
-        recvData = literal_eval(recvData)
-        
+        try:
+            socketTCP.send(myMessage)
+            recvData = socketTCP.recv(2048)
+            recvData = bytes.decode(recvData)
+            recvData = literal_eval(recvData)
+        except Exception as e:
+            print(traceback.format_exc())
+
         if recvData[0] is 0: #Received message is a ACK
             print("ACK: " + recvData[1])
             ui.textBrowser.setPlainText(ui.textBrowser.toPlainText() + "ACK: " + recvData[1] + "\n")
